@@ -6,13 +6,15 @@
 
 **Battery level, history and settings for the Razer Barracuda X (2022) headset on Windows — over its 2.4 GHz USB receiver, where Windows shows nothing.**
 
-[![Download](https://img.shields.io/github/v/release/nightdevx/barracuda-x-battery?label=download)](../../releases/latest)
+[![Download](https://img.shields.io/github/v/release/nightdevx/barracuda-x-battery?label=original)](https://github.com/nightdevx/barracuda-x-battery/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D4)](#install)
 [![Python](https://img.shields.io/badge/python-3.13%2B-3776AB)](#development)
 [![UI](https://img.shields.io/badge/UI-WebView2-2C7BE5)](#how-it-works)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**English** · [Türkçe](README.tr.md)
+**Versión en español para Windows.** [Descarga la versión portátil](../../releases/latest), extrae el ZIP y abre `BarracudaBattery.exe`. [Guía en español](README.es.md).
+
+**English** · [Türkçe](README.tr.md) · [Español](README.es.md)
 
 <img src="docs/images/overview.png" width="900" alt="Overview page">
 
@@ -77,7 +79,7 @@ so it sits next to the rest of a Razer setup.
 
 ## Install
 
-Download `BarracudaBattery-Setup-<version>.exe` from [Releases](../../releases/latest) and run it.
+Download `BarracudaBattery-Setup-<version>.exe` from the [original project releases](https://github.com/nightdevx/barracuda-x-battery/releases/latest) and run it. For the Spanish build, use the [portable release](../../releases/latest).
 
 - No administrator rights. Installs per user under `%LOCALAPPDATA%\Programs\BarracudaBattery`.
 - Python is not required; the runtime is bundled.
@@ -90,7 +92,7 @@ Download `BarracudaBattery-Setup-<version>.exe` from [Releases](../../releases/l
 Uninstall from Settings → Apps. The log stays in `%LOCALAPPDATA%\BarracudaBattery`; delete that folder to remove it
 too.
 
-The interface is in Turkish.
+This checkout provides a Spanish interface. See the [Spanish guide](README.es.md) for the localized build.
 
 ## Supported hardware
 

@@ -3,9 +3,9 @@
 // this file only formats and draws.
 
 const C = {};  // colors and fonts, read from the CSS variables in app.css by loadTheme()
-const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-const DAYS_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-const NO_ANSWER = 'Kulaklık kapalı, kapsama dışında veya Bluetooth modunda';
+const DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const DAYS_SHORT = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+const NO_ANSWER = 'Audífonos apagados, fuera de alcance o en modo Bluetooth';
 const RING = 2 * Math.PI * 91, MINI = 2 * Math.PI * 19;
 
 let api, meta, state = null, page = null, lastRev = null, ticking = false;
@@ -21,18 +21,18 @@ const pad = n => String(n).padStart(2, '0');
 const dec = (x, n = 1) => x.toFixed(n).replace('.', ',');
 function fmtDur(s) {
   const m = Math.floor(s / 60);
-  if (m < 1) return '<1 dk';
+  if (m < 1) return '<1 min';
   const d = Math.floor(m / 1440), h = Math.floor(m / 60) % 24, mm = m % 60;
-  if (d) return h ? `${d} g ${h} sa` : `${d} g`;
-  return h ? (mm ? `${h} sa ${mm} dk` : `${h} sa`) : `${mm} dk`;
+  if (d) return h ? `${d} d ${h} h` : `${d} d`;
+  return h ? (mm ? `${h} h ${mm} min` : `${h} h`) : `${mm} min`;
 }
 const fmtHours = s => { const h = s / 3600; return !h ? '0' : h < 10 ? dec(h) : String(Math.round(h)); };
 const fmtTime = ts => { const d = new Date(ts * 1000); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const fmtClock = ts => { const d = new Date(ts * 1000); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const isoDate = iso => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
 const fmtDay = date => `${pad(date.getDate())}.${pad(date.getMonth() + 1)}`;
-const fmtRate = r => `%${dec(r)}/sa`;
-const ago = ts => { const s = Date.now() / 1000 - ts; return s < 60 ? 'az önce' : `${fmtDur(s)} önce`; };
+const fmtRate = r => `${dec(r)} %/h`;
+const ago = ts => { const s = Date.now() / 1000 - ts; return s < 60 ? 'hace un momento' : `hace ${fmtDur(s)}`; };
 const now = () => Date.now() / 1000;
 
 // ---- small components ----
@@ -127,7 +127,7 @@ function loadTheme() {
 
 function renderLegends() {
   document.querySelectorAll('[data-legend]').forEach(el => {
-    el.innerHTML = `<span><i style="background:${C.green}"></i>Pille</span><span><i style="background:${C.blue}"></i>Şarjda</span>`;
+    el.innerHTML = `<span><i style="background:${C.green}"></i>Con batería</span><span><i style="background:${C.blue}"></i>Cargando</span>`;
   });
 }
 
@@ -301,14 +301,14 @@ function levelChart(id, data) {
         },
         y: {
           min: 0, max: 100, border: { display: false }, grid: { color: C.grid, drawTicks: false },
-          ticks: { stepSize: 25, callback: v => `%${v}`, padding: 10 },
+          ticks: { stepSize: 25, callback: v => `${v} %`, padding: 10 },
         },
       },
       plugins: {
         tooltip: {
           callbacks: {
             title: items => fmtTime(items[0].raw.x),
-            label: item => `%${item.raw.y}${item.raw.c ? '   ·   şarjda' : ''}`,
+            label: item => `${item.raw.y} %${item.raw.c ? '   ·   cargando' : ''}`,
           },
         },
       },
@@ -335,7 +335,7 @@ function barChart(id, labels, datasets, { valueText, titles, headroom = '18%' } 
         y: {
           stacked: true, beginAtZero: true, grace: headroom, border: { display: false },
           grid: { color: C.grid, drawTicks: false },
-          ticks: { maxTicksLimit: 4, padding: 10, callback: v => `${v % 1 ? dec(v) : v} sa` },
+          ticks: { maxTicksLimit: 4, padding: 10, callback: v => `${v % 1 ? dec(v) : v} h` },
         },
       },
       plugins: {
@@ -367,7 +367,7 @@ function setRing(pct, tone, charging) {
 }
 
 function problem(s) {
-  if (!s.checked || now() - s.checked > 180) return 'Arka plan uygulaması çalışmıyor';
+  if (!s.checked || now() - s.checked > 180) return 'La aplicación en segundo plano está inactiva';
   return s.message || NO_ANSWER;
 }
 
@@ -379,24 +379,24 @@ function renderState(s) {
   state = s;
   if (changed) setRing(pct, tone, charging && !full);
 
-  $('ring-label').innerHTML = charging ? `${icon('zap')}${full ? 'Dolu' : 'Şarj oluyor'}`
-    : live ? 'Pille' : r ? `Son bilinen · ${fmtClock(r.ts)}` : 'Veri yok';
+  $('ring-label').innerHTML = charging ? `${icon('zap')}${full ? 'Carga completa' : 'Cargando'}`
+    : live ? 'Con batería' : r ? `Última lectura · ${fmtClock(r.ts)}` : 'Sin datos';
   const pill = $('hero-pill');
   pill.className = `pill ${!live ? '' : charging ? 'blue' : tone}`;
   pill.innerHTML = icon(!live ? 'circle-alert' : charging ? 'plug-zap' : pct <= meta.low_percent ? 'battery-low' : 'battery-medium');
-  pill.append(!live ? 'Bağlantı yok' : full ? 'Dolu, kablo takılı' : charging ? 'Şarj oluyor' : 'Pille çalışıyor');
+  pill.append(!live ? 'Sin conexión' : full ? 'Carga completa, cable conectado' : charging ? 'Cargando' : 'Funcionando con batería');
 
   let eta = '—', etaSub = '';
   if (!live) etaSub = problem(s);
-  else if (full) { eta = 'Dolu'; etaSub = 'Kabloyu çıkarabilirsin'; }
-  else if (s.eta_hours == null) etaSub = 'Süre tahmini için veri toplanıyor';
-  else { eta = `~${fmtDur(s.eta_hours * 3600)}`; etaSub = charging ? 'tam dolmasına kalan' : 'tahmini kalan kullanım'; }
+  else if (full) { eta = 'Carga completa'; etaSub = 'Puedes desconectar el cable'; }
+  else if (s.eta_hours == null) etaSub = 'Recopilando datos para estimar el tiempo';
+  else { eta = `~${fmtDur(s.eta_hours * 3600)}`; etaSub = charging ? 'para completar la carga' : 'de uso restante estimado'; }
   $('hero-eta').textContent = eta;
   $('hero-eta-sub').textContent = etaSub;
 
-  $('mini-pct').innerHTML = pct == null ? '--' : `<small>%</small>${pct}`;
-  $('mini-state').textContent = !live ? 'Bağlantı yok' : full ? 'Dolu' : charging ? 'Şarj oluyor' : 'Pille';
-  $('checked').textContent = s.checked && now() - s.checked <= 180 ? `Son kontrol ${fmtClock(s.checked)}` : problem(s);
+  $('mini-pct').innerHTML = pct == null ? '--' : `${pct}<small>%</small>`;
+  $('mini-state').textContent = !live ? 'Sin conexión' : full ? 'Carga completa' : charging ? 'Cargando' : 'Con batería';
+  $('checked').textContent = s.checked && now() - s.checked <= 180 ? `Última consulta ${fmtClock(s.checked)}` : problem(s);
 }
 
 async function tick() {
@@ -420,13 +420,13 @@ async function loadOverview(enter) {
   const o = await api.overview();
   levelChart('c-overview', o);
   if (enter) replay(['c-overview']);
-  setStat('ov-today', o.today ? fmtDur(o.today) : '—', 'kulaklık açık');
-  setStat('ov-week', o.week_usage ? fmtDur(o.week_usage) : '—', o.week_usage ? `günde ort. ${fmtDur(o.week_usage / 7)}` : '');
-  setStat('ov-drain', o.drain ? fmtRate(o.drain) : '—', o.drain ? `tam şarj ~${fmtDur(100 / o.drain * 3600)}` : 'veri toplanıyor');
-  setStat('ov-cycles', dec(o.cycles), 'eşdeğer tam şarj');
+  setStat('ov-today', o.today ? fmtDur(o.today) : '—', 'audífonos encendidos');
+  setStat('ov-week', o.week_usage ? fmtDur(o.week_usage) : '—', o.week_usage ? `promedio diario: ${fmtDur(o.week_usage / 7)}` : '');
+  setStat('ov-drain', o.drain ? fmtRate(o.drain) : '—', o.drain ? `carga completa: ~${fmtDur(100 / o.drain * 3600)}` : 'recopilando datos');
+  setStat('ov-cycles', dec(o.cycles), 'ciclos completos equivalentes');
   const d = o.discharge;
   $('f-used').textContent = d ? fmtDur(d.used) : '—';
-  $('f-drop').textContent = d ? `%${d.drop}  ·  %${d.start_percent} → %${d.end_percent}` : '—';
+  $('f-drop').textContent = d ? `${d.drop} %  ·  ${d.start_percent} % → ${d.end_percent} %` : '—';
   $('f-unplug').textContent = d ? fmtTime(d.start) : '—';
 }
 
@@ -435,93 +435,93 @@ async function loadHistory(enter) {
   levelChart('c-history', h);
   if (enter) replay(['c-history']);
   const charging = state && state.live && state.reading.charging;
-  setStat('hi-drain', h.drain ? fmtRate(h.drain) : '—', 'seçili aralıkta, pille');
-  setStat('hi-life', h.drain ? `~${fmtDur(100 / h.drain * 3600)}` : '—', 'bu tüketim hızıyla');
-  setStat('hi-charged', charging ? 'Şimdi' : h.last_charge ? ago(h.last_charge) : '—', h.last_charge ? fmtTime(h.last_charge) : '');
-  setStat('hi-usage', h.usage ? fmtDur(h.usage) : '—', 'seçili aralıkta');
-  $('sessions-count').textContent = `${h.sessions.length} oturum`;
+  setStat('hi-drain', h.drain ? fmtRate(h.drain) : '—', 'con batería en este periodo');
+  setStat('hi-life', h.drain ? `~${fmtDur(100 / h.drain * 3600)}` : '—', 'a este ritmo de consumo');
+  setStat('hi-charged', charging ? 'Ahora' : h.last_charge ? ago(h.last_charge) : '—', h.last_charge ? fmtTime(h.last_charge) : '');
+  setStat('hi-usage', h.usage ? fmtDur(h.usage) : '—', 'en este periodo');
+  $('sessions-count').textContent = `${h.sessions.length} ${h.sessions.length === 1 ? 'sesión' : 'sesiones'}`;
   $('t-sessions').innerHTML = h.sessions.length ? h.sessions.map(s => {
     const color = s.charging ? C.blue : C.green;
-    return `<tr><td><span class="tag" style="color:${color}"><i style="background:${color}"></i>${s.charging ? 'Şarj' : 'Pille'}</span></td>
-      <td>${fmtTime(s.start)}</td><td>${s.ongoing ? '<span class="muted">sürüyor</span>' : fmtTime(s.end)}</td>
-      <td>${fmtDur(s.duration)}</td><td>%${s.from} → %${s.to}</td><td>${s.rate ? fmtRate(s.rate) : '—'}</td></tr>`;
-  }).join('') : '<tr><td colspan="6" class="empty">Bu aralıkta kayıt yok</td></tr>';
+    return `<tr><td><span class="tag" style="color:${color}"><i style="background:${color}"></i>${s.charging ? 'Carga' : 'Con batería'}</span></td>
+      <td>${fmtTime(s.start)}</td><td>${s.ongoing ? '<span class="muted">en curso</span>' : fmtTime(s.end)}</td>
+      <td>${fmtDur(s.duration)}</td><td>${s.from} % → ${s.to} %</td><td>${s.rate ? fmtRate(s.rate) : '—'}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="empty">Sin registros en este periodo</td></tr>';
 }
 
 async function loadCycles(enter) {
   const items = (await api.cycles()).items, d = items[items.length - 1];
   const charging = state && state.live && state.reading.charging;
-  $('cy-title').textContent = !d ? 'Henüz tamamlanmış bir şarj yok' : charging ? 'Şu an şarjda · son dönem'
-    : d.recharged == null ? 'Son şarjdan beri' : 'Son dönem';
+  $('cy-title').textContent = !d ? 'Aún no hay una carga completa' : charging ? 'Cargando · último ciclo'
+    : d.recharged == null ? 'Desde la última carga' : 'Último ciclo';
   $('cy-used').textContent = d ? fmtDur(d.used) : '—';
-  $('cy-used-sub').textContent = 'kulaklık açık, pille geçen süre';
+  $('cy-used-sub').textContent = 'tiempo de uso con batería';
   $('cy-bar-left').style.width = `${d ? d.end_percent : 0}%`;
   $('cy-bar-used').style.left = `${d ? d.end_percent : 0}%`;
   $('cy-bar-used').style.width = `${d ? d.drop : 0}%`;
-  $('cy-from').textContent = d ? `%${d.end_percent} ${d.recharged == null ? 'kaldı' : 'ile şarja takıldı'}` : '';
-  $('cy-to').textContent = d ? `%${d.start_percent} ile şarjdan çıktı` : '';
-  $('cy-drop').textContent = d ? `%${d.drop}` : '—';
+  $('cy-from').textContent = d ? `${d.end_percent} % ${d.recharged == null ? 'restante' : 'al volver a cargar'}` : '';
+  $('cy-to').textContent = d ? `${d.start_percent} % al desconectar` : '';
+  $('cy-drop').textContent = d ? `${d.drop} %` : '—';
   $('cy-elapsed').textContent = d ? fmtDur((d.recharged || now()) - d.start) : '—';
   $('cy-rate').textContent = d && d.rate ? fmtRate(d.rate) : '—';
   $('cy-full').textContent = d && d.rate ? `~${fmtDur(100 * 3600 / d.rate)}` : '—';
 
   const last = items.slice(-12);
-  barChart('c-cycles', last.map(c => c.recharged == null ? 'şimdi' : fmtDay(new Date(c.start * 1000))), [{
-    label: 'Kullanım', data: last.map(c => c.used / 3600),
+  barChart('c-cycles', last.map(c => c.recharged == null ? 'ahora' : fmtDay(new Date(c.start * 1000))), [{
+    label: 'Uso', data: last.map(c => c.used / 3600),
     color: last.map(c => c.recharged == null ? rgba(C.green, 0.45) : C.green),
   }], {
-    valueText: i => `${fmtHours(last[i].used)} sa\n−%${last[i].drop}`, headroom: '32%',
-    titles: last.map(c => `${fmtTime(c.start)} → ${c.recharged == null ? 'sürüyor' : fmtTime(c.recharged)}`),
+    valueText: i => `${fmtHours(last[i].used)} h\n−${last[i].drop} %`, headroom: '32%',
+    titles: last.map(c => `${fmtTime(c.start)} → ${c.recharged == null ? 'en curso' : fmtTime(c.recharged)}`),
   });
   if (enter) replay(['c-cycles']);
 
-  $('cycles-count').textContent = `${items.length} dönem`;
+  $('cycles-count').textContent = `${items.length} ${items.length === 1 ? 'ciclo' : 'ciclos'}`;
   $('t-cycles').innerHTML = items.length ? items.slice().reverse().map(c => `<tr>
-    <td>${fmtTime(c.start)}</td><td>${c.recharged == null ? `<span style="color:${C.green}">sürüyor</span>` : fmtTime(c.recharged)}</td>
+    <td>${fmtTime(c.start)}</td><td>${c.recharged == null ? `<span style="color:${C.green}">en curso</span>` : fmtTime(c.recharged)}</td>
     <td>${fmtDur(c.used)}</td><td>${fmtDur((c.recharged || now()) - c.start)}</td>
-    <td>%${c.start_percent} → %${c.end_percent}</td><td>%${c.drop}</td><td>${c.rate ? fmtRate(c.rate) : '—'}</td></tr>`).join('')
-    : '<tr><td colspan="7" class="empty">Şarjdan çıkarıp kullandıktan sonra burada görünecek</td></tr>';
+    <td>${c.start_percent} % → ${c.end_percent} %</td><td>${c.drop} %</td><td>${c.rate ? fmtRate(c.rate) : '—'}</td></tr>`).join('')
+    : '<tr><td colspan="7" class="empty">Los ciclos aparecerán después de usar los audífonos con batería</td></tr>';
 }
 
 async function loadUsage(enter) {
   const u = await api.usage();
   const on = u.daily.map(([, a, b]) => a + b), used = on.filter(Boolean);
-  setStat('us-today', on[on.length - 1] ? fmtDur(on[on.length - 1]) : '—', 'kulaklık açık');
-  setStat('us-avg', used.length ? fmtDur(used.reduce((a, b) => a + b) / used.length) : '—', `kullanılan ${used.length} günde`);
-  setStat('us-cycles', dec(u.cycles), 'eşdeğer tam şarj');
-  setStat('us-health', u.health ? `%${Math.round(u.health)}` : '—', u.health ? 'ilk haftaya göre' : 'en az 2 hafta veri gerekir');
+  setStat('us-today', on[on.length - 1] ? fmtDur(on[on.length - 1]) : '—', 'audífonos encendidos');
+  setStat('us-avg', used.length ? fmtDur(used.reduce((a, b) => a + b) / used.length) : '—', `en ${used.length} ${used.length === 1 ? 'día de uso' : 'días de uso'}`);
+  setStat('us-cycles', dec(u.cycles), 'ciclos completos equivalentes');
+  setStat('us-health', u.health ? `${Math.round(u.health)} %` : '—', u.health ? 'respecto a la primera semana' : 'requiere al menos dos semanas de datos');
   barChart('c-daily', u.daily.map(([d]) => fmtDay(isoDate(d))), [
-    { label: 'Pille', data: u.daily.map(([, a]) => a / 3600), color: C.green },
-    { label: 'Şarjda', data: u.daily.map(([, , b]) => b / 3600), color: C.blue },
+    { label: 'Con batería', data: u.daily.map(([, a]) => a / 3600), color: C.green },
+    { label: 'Cargando', data: u.daily.map(([, , b]) => b / 3600), color: C.blue },
   ], { valueText: i => on[i] ? fmtHours(on[i]) : '' });
   barChart('c-weekly', u.weekly.map(([d]) => fmtDay(isoDate(d))), [
-    { label: 'Tam şarj', data: u.weekly.map(([, life]) => life || 0), color: C.violet },
-  ], { valueText: i => u.weekly[i][1] ? `${Math.round(u.weekly[i][1])} sa` : '', titles: u.weekly.map(([d]) => `${fmtDay(isoDate(d))} haftası`) });
+    { label: 'Carga completa', data: u.weekly.map(([, life]) => life || 0), color: C.violet },
+  ], { valueText: i => u.weekly[i][1] ? `${Math.round(u.weekly[i][1])} h` : '', titles: u.weekly.map(([d]) => `Semana del ${fmtDay(isoDate(d))}`) });
   if (enter) replay(['c-daily', 'c-weekly']);
 }
 
 async function loadWeek(enter) {
   const r = await api.week(weekOffset), w = r.week, p = r.prev;
   const monday = isoDate(r.monday), sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
-  $('week-label').innerHTML = `${fmtDay(monday)} – ${fmtDay(sunday)}<small>${r.offset === 0 ? 'bu hafta' : r.offset === -1 ? 'geçen hafta' : sunday.getFullYear()}</small>`;
+  $('week-label').innerHTML = `${fmtDay(monday)} – ${fmtDay(sunday)}<small>${r.offset === 0 ? 'esta semana' : r.offset === -1 ? 'semana anterior' : sunday.getFullYear()}</small>`;
   $('week-prev').disabled = !r.can_prev;
   $('week-next').disabled = !r.can_next;
-  const was = v => v ? `geçen hafta ${v}` : 'geçen hafta kayıt yok';
+  const was = v => v ? `semana anterior: ${v}` : 'sin registros la semana anterior';
   setStat('wk-total', w.total ? fmtDur(w.total) : '—', was(p.total && fmtDur(p.total)));
-  setStat('wk-charges', `${w.charges} kez`, w.charges ? `toplam %${w.charged} şarj edildi` : '');
+  setStat('wk-charges', `${w.charges} ${w.charges === 1 ? 'vez' : 'veces'}`, w.charges ? `${w.charged} % de carga acumulada` : '');
   setStat('wk-life', w.life ? `~${fmtDur(w.life * 3600)}` : '—', was(p.life && `~${fmtDur(p.life * 3600)}`));
   setStat('wk-drain', w.drain ? fmtRate(w.drain) : '—', was(p.drain && fmtRate(p.drain)));
-  setStat('wk-longest', w.longest ? fmtDur(w.longest) : '—', 'ara vermeden, şarjdayken de');
+  setStat('wk-longest', w.longest ? fmtDur(w.longest) : '—', 'incluye el uso durante la carga');
   const totals = w.days.map(([, a, b]) => a + b), top = totals.indexOf(Math.max(...totals));
   setStat('wk-top', totals[top] ? DAYS[top] : '—', totals[top] ? fmtDur(totals[top]) : '');
-  setStat('wk-lowest', w.lowest == null ? '—' : `%${w.lowest}`, 'haftanın en düşük seviyesi');
-  setStat('wk-days', `${w.used_days} / 7`, w.used_days ? `günde ort. ${fmtDur(w.total / w.used_days)}` : '');
+  setStat('wk-lowest', w.lowest == null ? '—' : `${w.lowest} %`, 'nivel mínimo de la semana');
+  setStat('wk-days', `${w.used_days} / 7`, w.used_days ? `promedio diario: ${fmtDur(w.total / w.used_days)}` : '');
   barChart('c-week-days', DAYS_SHORT, [
-    { label: 'Pille', data: w.days.map(([, a]) => a / 3600), color: C.green },
-    { label: 'Şarjda', data: w.days.map(([, , b]) => b / 3600), color: C.blue },
+    { label: 'Con batería', data: w.days.map(([, a]) => a / 3600), color: C.green },
+    { label: 'Cargando', data: w.days.map(([, , b]) => b / 3600), color: C.blue },
   ], { valueText: i => totals[i] ? fmtHours(totals[i]) : '', titles: w.days.map(([d], i) => `${DAYS[i]}, ${fmtDay(isoDate(d))}`) });
   barChart('c-week-hours', w.hours.map((_, h) => pad(h)), [
-    { label: 'Kullanım', data: w.hours.map(s => s / 3600), color: C.violet },
+    { label: 'Uso', data: w.hours.map(s => s / 3600), color: C.violet },
   ], { titles: w.hours.map((_, h) => `${pad(h)}:00 – ${pad(h + 1)}:00`) });
   if (enter) replay(['c-week-days', 'c-week-hours']);
 }
@@ -554,9 +554,9 @@ function setBand(i, v) {
 
 function renderSettings() {
   const s = settings;
-  setStat('dv-version', s ? `v${s.version}` : '—', 'kulaklık yazılımı');
-  setStat('dv-link', s ? 'Bağlı' : 'Yanıt yok', s ? `2.4 GHz · ${s.receiver || 'alıcı'}` : NO_ANSWER);
-  setStat('dv-gaming', s ? (s.gaming ? 'Açık' : 'Kapalı') : '—', 'yalnızca Bluetooth bağlantısında değişir');
+  setStat('dv-version', s ? `v${s.version}` : '—', 'software de los audífonos');
+  setStat('dv-link', s ? 'Conectado' : 'Sin respuesta', s ? `2,4 GHz · ${s.receiver || 'receptor'}` : NO_ANSWER);
+  setStat('dv-gaming', s ? (s.gaming ? 'Activado' : 'Desactivado') : '—', 'solo se puede cambiar por Bluetooth');
   enableControls(!!s && !deviceBusy);
   if (!s) return;
   setSegment('seg-eq', s.eq_preset);
@@ -567,15 +567,15 @@ function renderSettings() {
 
 async function loadDevice(enter, force = false) {
   if (settings && !force) return;
-  setDeviceBusy(true, 'Kulaklıktan okunuyor…');
+  setDeviceBusy(true, 'Leyendo ajustes…');
   const s = await api.settings();
   settings = s.error ? null : s;
-  setDeviceBusy(false, s.error || 'Ayarlar kulaklıktan okundu');
+  setDeviceBusy(false, s.error || 'Ajustes leídos');
   renderSettings();
 }
 
 async function applySettings(changes, done) {
-  setDeviceBusy(true, 'Kaydediliyor…');
+  setDeviceBusy(true, 'Guardando…');
   const r = await api.apply(changes);
   if (r.ok) for (const [key, values] of changes) settings[key] = key === 'custom_eq' ? values : values[0];
   setDeviceBusy(false, r.ok ? 'Kaydedildi' : r.error);
@@ -608,37 +608,37 @@ async function init() {
   $('mini-fill').style.strokeDasharray = MINI;
   $('mini-fill').style.strokeDashoffset = MINI;
 
-  tiles('stats-overview', [['ov-today', 'Bugün', 'clock', 'green'], ['ov-week', 'Son 7 gün', 'calendar-days', 'violet'],
-    ['ov-drain', 'Ortalama tüketim', 'gauge', 'amber'], ['ov-cycles', 'Şarj döngüsü', 'repeat', 'blue']]);
-  tiles('stats-history', [['hi-drain', 'Ortalama tüketim', 'gauge', 'amber'], ['hi-life', 'Tam şarjla kullanım', 'timer', 'violet'],
-    ['hi-charged', 'Son şarj', 'zap', 'blue'], ['hi-usage', 'Pille kullanım', 'clock', 'green']]);
-  tiles('stats-usage', [['us-today', 'Bugün', 'clock', 'green'], ['us-avg', 'Günlük ortalama', 'chart-column', 'violet'],
-    ['us-cycles', 'Şarj döngüsü', 'repeat', 'blue'], ['us-health', 'Pil sağlığı', 'activity', 'amber']]);
-  tiles('stats-week', [['wk-total', 'Toplam kullanım', 'clock', 'green'], ['wk-charges', 'Şarj', 'zap', 'blue'],
-    ['wk-life', 'Tam şarjla kullanım', 'timer', 'violet'], ['wk-drain', 'Ortalama tüketim', 'gauge', 'amber']]);
-  tiles('stats-week2', [['wk-longest', 'En uzun kesintisiz', 'headphones', 'blue'], ['wk-top', 'En çok kullanılan gün', 'calendar-days', 'violet'],
-    ['wk-lowest', 'En düşük pil', 'battery-low', 'red'], ['wk-days', 'Kullanılan gün', 'activity', 'green']]);
-  tiles('stats-device', [['dv-version', 'Firmware', 'info', 'blue'], ['dv-link', 'Bağlantı', 'wifi', 'green'],
-    ['dv-gaming', 'Oyun modu', 'gamepad-2', 'violet']]);
+  tiles('stats-overview', [['ov-today', 'Hoy', 'clock', 'green'], ['ov-week', 'Últimos 7 días', 'calendar-days', 'violet'],
+    ['ov-drain', 'Consumo promedio', 'gauge', 'amber'], ['ov-cycles', 'Ciclos de carga', 'repeat', 'blue']]);
+  tiles('stats-history', [['hi-drain', 'Consumo promedio', 'gauge', 'amber'], ['hi-life', 'Autonomía estimada', 'timer', 'violet'],
+    ['hi-charged', 'Última carga', 'zap', 'blue'], ['hi-usage', 'Uso con batería', 'clock', 'green']]);
+  tiles('stats-usage', [['us-today', 'Hoy', 'clock', 'green'], ['us-avg', 'Promedio diario', 'chart-column', 'violet'],
+    ['us-cycles', 'Ciclos de carga', 'repeat', 'blue'], ['us-health', 'Salud de la batería', 'activity', 'amber']]);
+  tiles('stats-week', [['wk-total', 'Uso total', 'clock', 'green'], ['wk-charges', 'Carga', 'zap', 'blue'],
+    ['wk-life', 'Autonomía estimada', 'timer', 'violet'], ['wk-drain', 'Consumo promedio', 'gauge', 'amber']]);
+  tiles('stats-week2', [['wk-longest', 'Mayor uso continuo', 'headphones', 'blue'], ['wk-top', 'Día de más uso', 'calendar-days', 'violet'],
+    ['wk-lowest', 'Batería mínima', 'battery-low', 'red'], ['wk-days', 'Días de uso', 'activity', 'green']]);
+  tiles('stats-device', [['dv-version', 'Firmware', 'info', 'blue'], ['dv-link', 'Conexión', 'wifi', 'green'],
+    ['dv-gaming', 'Modo de juego', 'gamepad-2', 'violet']]);
 
-  segmented('seg-range', [['24h', '24 saat'], ['7d', '7 gün'], ['30d', '30 gün'], ['all', 'Tümü']], v => { range = v; loadHistory(true); });
+  segmented('seg-range', [['24h', '24 horas'], ['7d', '7 días'], ['30d', '30 días'], ['all', 'Todo']], v => { range = v; loadHistory(true); });
   setSegment('seg-range', range);
-  segmented('seg-eq', meta.eq_presets, v => applySettings([['eq_preset', [Number(v)]]], 'Ekolayzer değişti'));
-  segmented('seg-standby', meta.standby.map(m => [m, m ? `${m} dk` : 'Kapalı']), v => applySettings([['standby', [Number(v)]]], 'Otomatik kapanma kaydedildi'));
+  segmented('seg-eq', meta.eq_presets, v => applySettings([['eq_preset', [Number(v)]]], 'Ecualizador actualizado'));
+  segmented('seg-standby', meta.standby.map(m => [m, m ? `${m} min` : 'Desactivado']), v => applySettings([['standby', [Number(v)]]], 'Apagado automático guardado'));
   $('bands').insertAdjacentHTML('afterbegin', meta.eq_bands.map((hz, i) => `
     <div class="band"><span class="val" id="bv-${i}">0</span>
       <input type="range" min="-5" max="5" step="1" value="0" id="b-${i}"><span class="hz">${hz}</span></div>`).join(''));
   meta.eq_bands.forEach((_, i) => { setBand(i, 0); $(`b-${i}`).addEventListener('input', e => setBand(i, Number(e.target.value))); });
   $('eq-apply').addEventListener('click', () => applySettings(
-    [['custom_eq', meta.eq_bands.map((_, i) => Number($(`b-${i}`).value) + 5)], ['eq_preset', [255]]], 'Özel EQ uygulandı'));
+    [['custom_eq', meta.eq_bands.map((_, i) => Number($(`b-${i}`).value) + 5)], ['eq_preset', [255]]], 'EQ personalizado aplicado'));
   $('eq-flat').addEventListener('click', () => meta.eq_bands.forEach((_, i) => setBand(i, 0)));
-  $('dnd').addEventListener('change', e => applySettings([['dnd', [e.target.checked ? 1 : 0]]], e.target.checked ? 'Rahatsız etme açıldı' : 'Rahatsız etme kapandı'));
+  $('dnd').addEventListener('change', e => applySettings([['dnd', [e.target.checked ? 1 : 0]]], e.target.checked ? 'Modo No molestar activado' : 'Modo No molestar desactivado'));
   $('btn-reread').addEventListener('click', () => loadDevice(false, true));
   $('btn-diagnose').addEventListener('click', async () => {
     const btn = $('btn-diagnose');
     btn.disabled = true;
     btn.classList.add('spinning');
-    try { toast(`Rapor kaydedildi: ${(await api.diagnose()).split(/[\\/]/).pop()} (Gezgin'de açıldı)`); } finally { btn.disabled = false; btn.classList.remove('spinning'); }
+    try { toast(`Informe guardado: ${(await api.diagnose()).split(/[\\/]/).pop()} (abierto en el Explorador)`); } finally { btn.disabled = false; btn.classList.remove('spinning'); }
   });
   renderSettings();
 

@@ -32,7 +32,7 @@ RUN_NAME = 'BarracudaBattery'
 SHOW_EVENT = r'Local\BarracudaBattery.Show'        # set: the tray process opens the window
 REFRESH_EVENT = r'Local\BarracudaBattery.Refresh'  # set: the tray process reads the headset now
 WINDOW_EVENT = r'Local\BarracudaBattery.Window'    # set: the window process comes to the front
-NO_ANSWER = 'Kulaklık kapalı, kapsama dışında veya Bluetooth modunda'
+NO_ANSWER = 'Audífonos apagados, fuera de alcance o en modo Bluetooth'
 SETTINGS = {'eq_preset': hs.EQ_PRESET, 'custom_eq': hs.CUSTOM_EQ, 'dnd': hs.DND, 'standby': hs.STANDBY}
 GREEN, BLUE, RED = '#44d62c', '#1fd8f0', '#ff3c3c'  # tray icon, as in the page
 
@@ -103,12 +103,12 @@ def load_prefs():
 
 def dongle_error(e):
     text = str(e)
-    if text == 'dongle not found':
-        return 'USB alıcı takılı değil'
-    if text.startswith('unsupported dongle'):
+    if text == 'receptor no detectado':
+        return 'Receptor USB desconectado'
+    if text.startswith('receptor incompatible'):
         pid = int(text.split()[-1], 16)
-        return f'Bu alıcı desteklenmiyor: {hs.OTHER_DONGLES[pid]} (USB 1532:{pid:04X})'
-    return f'Hata: {type(e).__name__}: {e}' if not isinstance(e, OSError) else f'Hata: {e}'
+        return f'Receptor incompatible: {hs.OTHER_DONGLES[pid]} (USB 1532:{pid:04X})'
+    return f'Error: {type(e).__name__}: {e}' if not isinstance(e, OSError) else f'Error: {e}'
 
 
 # ---- tray process ----
@@ -162,9 +162,9 @@ class Tray:
         self.window = None  # the window process
         self.warned = False
         self.icon = pystray.Icon('barracuda', tray_image('..', 'gray'), 'Barracuda X', menu=pystray.Menu(
-            pystray.MenuItem('Göster', lambda: self.open_window(), default=True),  # default = left click
-            pystray.MenuItem('Şimdi oku', lambda: threading.Thread(target=self.read, daemon=True).start()),
-            pystray.MenuItem('Çıkış', lambda: self.quit()),
+            pystray.MenuItem('Mostrar', lambda: self.open_window(), default=True),  # default = left click
+            pystray.MenuItem('Actualizar', lambda: threading.Thread(target=self.read, daemon=True).start()),
+            pystray.MenuItem('Salir', lambda: self.quit()),
         ))
 
     def run(self, open_window):
@@ -214,7 +214,7 @@ class Tray:
                 state, message = ('ok' if res else 'no_answer'), ''
             except Exception as e:  # anything: this runs on the poll thread, which must survive to try again
                 res = None
-                state, message = ('no_dongle' if str(e) == 'dongle not found' else 'error'), dongle_error(e)
+                state, message = ('no_dongle' if str(e) == 'receptor no detectado' else 'error'), dongle_error(e)
             if res:
                 self.history.add(*res)
             self.history.set_status(state, message)
@@ -227,9 +227,9 @@ class Tray:
         pct, charging = res
         color = BLUE if charging else RED if pct <= LOW_PERCENT else GREEN
         self.icon.icon = tray_image(str(pct), color, charging)
-        self.icon.title = f'Barracuda X: %{pct}{" · şarj oluyor" if charging else ""}'
+        self.icon.title = f'Barracuda X: {pct} %{" · cargando" if charging else ""}'
         if pct <= LOW_PERCENT and not charging and not self.warned:
-            self.icon.notify(f'Pil seviyesi %{pct}', 'Barracuda X')
+            self.icon.notify(f'Batería baja: {pct} %', 'Barracuda X')
             self.warned = True
         elif pct > LOW_PERCENT or charging:
             self.warned = False
@@ -373,8 +373,8 @@ class Api:
         try:
             text = hs.diagnose()
         except Exception as e:
-            text = f'Tanılama yapılamadı: {type(e).__name__}: {e}\n'
-        path = os.path.join(os.path.dirname(history.default_path()), 'tanilama.txt')
+            text = f'No se pudo generar el diagnóstico: {type(e).__name__}: {e}\n'
+        path = os.path.join(os.path.dirname(history.default_path()), 'diagnostico.txt')
         with open(path, 'w', encoding='utf-8') as f:
             f.write(text)
         subprocess.Popen(['explorer', f'/select,{path}'])
@@ -387,8 +387,8 @@ class Api:
         except OSError as e:
             return {'ok': False, 'error': dongle_error(e)}
         except (KeyError, ValueError) as e:
-            return {'ok': False, 'error': f'Geçersiz ayar: {e}'}
-        return {'ok': bool(ok), 'error': None if ok else 'Kulaklık ayarı kabul etmedi' if ok is False else NO_ANSWER}
+            return {'ok': False, 'error': f'Ajuste inválido: {e}'}
+        return {'ok': bool(ok), 'error': None if ok else 'Los audífonos rechazaron el ajuste' if ok is False else NO_ANSWER}
 
     def prefs(self):
         return {'startup': startup_enabled(), 'on_top': is_topmost(self._window)}

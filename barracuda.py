@@ -18,7 +18,7 @@ from contextlib import contextmanager
 import hid
 
 VID = 0x1532
-DONGLES = {0x0550: 'Barracuda X (2022), YS-Tech alıcı', 0x0552: 'Barracuda X (2022), Macronix alıcı'}
+DONGLES = {0x0550: 'Barracuda X (2022), receptor YS-Tech', 0x0552: 'Barracuda X (2022), receptor Macronix'}
 # Other Barracuda X receivers, with other protocols; recognized only to say they aren't supported.
 OTHER_DONGLES = {0x0536: 'Barracuda X (2021)', 0x0574: 'Barracuda X Chroma'}
 YS_TECH, MACRONIX = 0x02, 0x01  # report id of each bridge's vendor collection
@@ -34,7 +34,7 @@ CUSTOM_EQ = 0x15    # ten bands, 0..10, 5 = flat
 DND = 0x27          # 00 off / 01 on
 STANDBY = 0x2C      # minutes idle before power-off, STANDBY_MINUTES
 
-EQ_PRESETS = {0x00: 'Varsayılan', 0x07: 'Oyun', 0x08: 'Müzik', 0x09: 'Film', 0xFF: 'Özel'}
+EQ_PRESETS = {0x00: 'Predeterminado', 0x07: 'Juego', 0x08: 'Música', 0x09: 'Cine', 0xFF: 'Personalizado'}
 EQ_BANDS = ('31', '63', '125', '250', '500', '1k', '2k', '4k', '8k', '16k')
 STANDBY_MINUTES = (0, 5, 15, 30, 45, 60)  # 0 = never
 # Allowed values per setting, checked before anything is sent to the headset.
@@ -59,7 +59,7 @@ class _DongleLock:
 
     def __enter__(self):
         if self.k32.WaitForSingleObject(self.handle, 15_000) not in (0, 0x80):  # WAIT_OBJECT_0, WAIT_ABANDONED
-            raise OSError('dongle busy')
+            raise OSError('receptor ocupado')
 
     def __exit__(self, *exc):
         self.k32.ReleaseMutex(self.handle)
@@ -222,7 +222,7 @@ def connect():
         info = find_dongle()
         if info is None:
             other = next((d['product_id'] for d in hid.enumerate(VID) if d['product_id'] in OTHER_DONGLES), None)
-            raise OSError(f'unsupported dongle {other:04x}' if other else 'dongle not found')
+            raise OSError(f'receptor incompatible {other:04x}' if other else 'receptor no detectado')
         dev = Dongle(info)
         try:
             dev.start()
@@ -251,9 +251,9 @@ def put(dev, cmd, values):
     """Customer-data SET, then read back. True only when the headset reports the new values."""
     if cmd == CUSTOM_EQ:
         if len(values) != len(EQ_BANDS) or not all(0 <= v <= 10 for v in values):
-            raise ValueError(f'bad custom EQ {values}')
+            raise ValueError(f'EQ personalizado inválido: {values}')
     elif len(values) != 1 or values[0] not in VALID[cmd]:
-        raise ValueError(f'bad value {values} for {cmd:#x}')
+        raise ValueError(f'valor inválido {values} para {cmd:#x}')
     set_cmd = cmd | 0x80
     send(dev, 0x08, [3 + len(values), set_cmd, 0x00, len(values), *values],
          lambda f, seq: f[2] == 0x08 and f[10] == set_cmd, timeout=1.5)
@@ -321,8 +321,8 @@ def diagnose():
     """Text report for troubleshooting on someone else's PC: the Razer HID collections Windows lists, then the raw
     traffic of one battery read and one settings read."""
     global _trace_log
-    lines = [f'Barracuda X tanılama  {time.strftime("%Y-%m-%d %H:%M:%S")}  {platform.platform()}', '',
-             'Razer HID arayüzleri:']
+    lines = [f'Diagnóstico de Barracuda X  {time.strftime("%Y-%m-%d %H:%M:%S")}  {platform.platform()}', '',
+             'Interfaces HID de Razer:']
     for d in hid.enumerate(VID):
         lines.append(f"  {d['product_id']:04x}  if {d['interface_number']}  page {d['usage_page']:04x}  "
                      f"usage {d['usage']:04x}  {d['product_string']}  {d['path']!r}")
@@ -376,5 +376,5 @@ if __name__ == '__main__':
         print(diagnose())
     else:
         res = read_battery()
-        print('headset off or out of range' if res is None else f'{res[0]}%{" charging" if res[1] else ""}')
+        print('audífonos apagados o fuera de alcance' if res is None else f'{res[0]} %{" cargando" if res[1] else ""}')
         print(read_settings())

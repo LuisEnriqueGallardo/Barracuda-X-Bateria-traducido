@@ -92,7 +92,7 @@ svg.icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-w
 .mini .track { stroke: rgba(255, 255, 255, 0.07); }
 .mini .fill { stroke: var(--faint); stroke-linecap: round; transition: stroke-dashoffset 1s var(--ease), stroke 0.4s; }
 .mini-pct { font: 650 20px/1 var(--font-display); }
-.mini-pct small { font-size: 12px; color: var(--muted); margin-right: 1px; }
+.mini-pct small { font-size: 12px; color: var(--muted); margin-left: 1px; }
 .mini-state { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
 .nav { position: relative; display: flex; flex-direction: column; gap: 2px; }
@@ -278,7 +278,7 @@ td .tag i { width: 8px; height: 8px; border-radius: 50%; }
 .ring .shine { transform-origin: 105px 105px; }
 .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .ring-pct { font: 700 54px/1 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.ring-pct small { font-size: 26px; color: var(--muted); margin-right: 2px; font-weight: 600; }
+.ring-pct small { font-size: 26px; color: var(--muted); margin-left: 2px; font-weight: 600; }
 .ring-label { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .ring-label svg { width: 15px; height: 15px; color: var(--amber); }
 .hero.charging .ring-label svg { animation: pulse 1.6s ease-in-out infinite; }
@@ -393,7 +393,7 @@ body { background: var(--bg); }
   background: linear-gradient(135deg, transparent 44%, var(--green) 44%, var(--green) 56%, transparent 56%);
 }
 .stat:hover { transform: none; box-shadow: inset 0 0 0 1px rgba(68, 214, 44, 0.5), inset 0 0 24px rgba(68, 214, 44, 0.06); }
-.stat-top { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+.stat-top { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; gap: 6px; }
 .stat-top .badge { border-radius: 0; clip-path: var(--cut-sm); }
 .stat-value { font: 600 28px/1.15 var(--font-display); letter-spacing: 0.02em; }
 .stat-value.flash { animation-name: flash-green; }

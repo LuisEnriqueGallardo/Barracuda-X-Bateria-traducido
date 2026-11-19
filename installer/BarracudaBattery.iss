@@ -1,7 +1,7 @@
-; Inno Setup script. Build with build.ps1, which first makes the one-folder app in build\app.
+﻿; Inno Setup script. Build with build.ps1, which first makes the one-folder app in build\app.
 ; Per-user install: no administrator rights, files under %LOCALAPPDATA%\Programs.
 
-#define AppName "Barracuda X Pil"
+#define AppName "Batería de Barracuda X"
 #define AppVersion "1.2.0"
 #define AppExe "BarracudaBattery.exe"
 #define RunKey "Software\Microsoft\Windows\CurrentVersion\Run"
@@ -34,10 +34,10 @@ SolidCompression=yes
 CloseApplications=no
 
 [Languages]
-Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
-Name: "startup"; Description: "Windows açılınca arka planda başlat (pil kaydı kesintisiz sürer)"
+Name: "startup"; Description: "Iniciar en segundo plano con Windows para registrar la batería de forma continua"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
@@ -52,7 +52,7 @@ Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Registry]
-; Same value the app's "Windows ile başlat" switch writes.
+; Same value the app's "Iniciar con Windows" switch writes.
 Root: HKCU; Subkey: "{#RunKey}"; ValueType: string; ValueName: "BarracudaBattery"; ValueData: """{app}\{#AppExe}"" ""--tray"""; Tasks: startup
 
 [Run]

@@ -12,7 +12,9 @@
 [![UI](https://img.shields.io/badge/UI-WebView2-2C7BE5)](#how-it-works)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**Versión en español para Windows.** [Descarga la versión portátil](../../releases/latest), extrae el ZIP y abre `BarracudaBattery.exe`. [Guía en español](README.es.md).
+**Traducción al español para Windows** del [proyecto de nightdevx](https://github.com/nightdevx/barracuda-x-battery) para los Razer Barracuda X (2022). Este proyecto es independiente y no tiene relación oficial con Razer. Se conserva la [licencia MIT original](LICENSE).
+
+[Descarga el ejecutable en Releases](https://github.com/LuisEnriqueGallardo/barracuda-x-battery/releases/latest) y abre `BarracudaBattery-ES.exe`. También está disponible la versión portátil en ZIP. [Guía en español](README.es.md).
 
 **English** · [Türkçe](README.tr.md) · [Español](README.es.md)
 
